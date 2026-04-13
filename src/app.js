@@ -18,7 +18,7 @@ app.use(helmet());
 
 // CORS configuration
 app.use(cors({
-    origin: process.env.CORS_ORIGIN || '*',
+    origin: true, // Automatically allows any frontend URL (Railway, Vercel, Localhost)
     credentials: true,
 }));
 
