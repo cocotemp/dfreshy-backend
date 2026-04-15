@@ -1,17 +1,44 @@
 const jwt = require('jsonwebtoken');
 const User = require('../../models/user.model');
 const otpService = require('./otp.service');
+const smsService = require('../../services/sms.service');
 const env = require('../../config/env');
+const logger = require('../../utils/logger');
 const { UnauthorizedError } = require('../../utils/errors');
 const { ROLES } = require('../../config/constants');
 
 const sendOTP = async (phone) => {
+    // 1. Generate OTP and store in memory with hash + expiry
     const otp = otpService.generateOTP(phone);
+    const message = `Your dFreshy OTP is ${otp}. Valid for 5 minutes. Do not share with anyone.`;
 
-    // For now, just log it. Later integrate SMS.
-    console.log(`OTP for ${phone}: ${otp}`);
+    // 2. In production: send real SMS via Fast2SMS
+    if (process.env.NODE_ENV === 'production') {
+        const result = await smsService.sendSMS(phone, message);
+        if (!result.sent) {
+            // Log the failure but DO NOT crash — OTP is still stored, user can retry
+            logger.warn(`[OTP] SMS delivery failed for ${phone}: ${result.info}`);
+            // In production, still return success=true (security: don't reveal SMS status)
+            // But if the key is totally missing, inform the developer
+            if (!process.env.FAST2SMS_API_KEY) {
+                return { success: false, message: 'SMS service not configured. Contact support.' };
+            }
+        }
+        logger.info(`[OTP] SMS sent to ${phone}`);
+        return { success: true };
+    }
 
-    return true;
+    // 3. Development/staging: try SMS if key is set, else fall back to response OTP
+    if (process.env.FAST2SMS_API_KEY) {
+        const result = await smsService.sendSMS(phone, message);
+        logger.info(`[DEV] SMS result for ${phone}: ${JSON.stringify(result)}`);
+        // Still return OTP in response for dev convenience
+        return { success: true, otp, smsSent: result.sent };
+    }
+
+    // 4. No SMS key in dev — return OTP directly so frontend shows it
+    logger.info(`[DEV] OTP for ${phone}: ${otp} (no SMS key set)`);
+    return { success: true, otp };
 };
 
 const verifyOTP = async ({ phone, otp, deviceId }) => {

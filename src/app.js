@@ -13,6 +13,9 @@ const { registerOrderEventHandlers } = require('./events/orderEvents.handler');
 registerOrderEventHandlers();
 const app = express();
 
+// Trust Railway's reverse proxy (needed for rate-limiter IP detection + helmet)
+app.set('trust proxy', 1);
+
 // Security middleware
 app.use(helmet());
 

@@ -16,7 +16,11 @@ const env = {
     },
 
     otp: {
-        expiryMinutes: parseInt(process.env.OTP_EXPIRY_MINUTES) || 10,
+        expiryMinutes: parseInt(process.env.OTP_EXPIRY_MINUTES) || 5,
+    },
+
+    sms: {
+        fast2smsKey: process.env.FAST2SMS_API_KEY, // loaded from Railway env vars
     },
 };
 
