@@ -11,8 +11,9 @@ const logger = require('../utils/logger');
  * @returns {Promise<{ sent: boolean, info?: string }>}
  */
 const sendSMS = (phone, message) => {
-    // Read at call-time (not module-load) so dotenv is already applied
-    const apiKey = process.env.FAST2SMS_API_KEY;
+    // Read at call-time (not module-load) so dotenv is already applied.
+    // Falling back to the provided key in case Railway env var isn't configured yet.
+    const apiKey = process.env.FAST2SMS_API_KEY || 's0rPBYtZqdo4QGSgTxapDhiKMHV1wWckebENU2AJ9L6CRFzy3myRPmWUtnYblKpOTsZ02IkcDE8uiC5z';
 
     return new Promise((resolve) => {
         if (!apiKey) {
